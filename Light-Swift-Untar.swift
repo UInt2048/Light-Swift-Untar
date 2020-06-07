@@ -1,5 +1,5 @@
 import Foundation
-public typealias ProgressClosure = (Double) -> Void
+public typealias Closure = (Double) -> Void
 
 enum UntarError: Error, LocalizedError {
   case notFound(file: String)
@@ -24,7 +24,7 @@ public extension FileManager {
 
   // MARK: - Private Methods
   private func createFilesAndDirectories(path: String, tarObject: Any, size: UInt64,
-                                         progress progressClosure: ProgressClosure?) throws -> Bool {
+                                         progress progressClosure: Closure?) throws -> Bool {
     try createDirectory(atPath: path, withIntermediateDirectories: true, attributes: nil)
     var location: UInt64 = 0
     while location < size {
@@ -119,20 +119,20 @@ public extension FileManager {
   }
 
   // MARK: - Public Methods
-
-  func createFilesAndDirectories(path: String, tarData: Data,
-                                 progress: ProgressClosure? = nil) throws -> Bool {
+  // Return true when no error for convenience
+  @discardableResult func createFilesAndDirectories(path: String, tarData: Data,
+                                                    progress: Closure? = nil) throws -> Bool {
     try createFilesAndDirectories(path: path, tarObject: tarData, size: UInt64(tarData.count),
                                   progress: progress)
   }
 
-  func createFilesAndDirectories(url: URL, tarData: Data,
-                                 progress: ProgressClosure? = nil) throws -> Bool {
+  @discardableResult func createFilesAndDirectories(url: URL, tarData: Data,
+                                                    progress: Closure? = nil) throws -> Bool {
     try createFilesAndDirectories(path: url.path, tarData: tarData, progress: progress)
   }
 
-  func createFilesAndDirectories(path: String, tarPath: String,
-                                 progress: ProgressClosure? = nil) throws -> Bool {
+  @discardableResult func createFilesAndDirectories(path: String, tarPath: String,
+                                                    progress: Closure? = nil) throws -> Bool {
     let fileManager = FileManager.default
     if fileManager.fileExists(atPath: tarPath) {
       let attributes = try fileManager.attributesOfItem(atPath: tarPath)
