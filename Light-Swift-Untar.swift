@@ -74,15 +74,14 @@ public extension FileManager {
   private func name(object: Any, offset: UInt64) -> String {
     let nameData = data(object: object, location: offset + FileManager.tarNamePosition,
                         length: FileManager.tarNameSize)!
-    let nameBytes = [UInt8](nameData)
-    return String(bytes: nameBytes, encoding: .ascii)!
+    return String(data: nameData, encoding: .ascii)!
   }
 
   private func size(object: Any, offset: UInt64) -> UInt64 {
     let sizeData = data(object: object, location: offset + FileManager.tarSizePosition,
                         length: FileManager.tarSizeSize)!
-    let sizeString = String(bytes: [UInt8](sizeData), encoding: .ascii)!
-    return UInt64(sizeString, radix: 8)! // Size is an octal number, convert to decimal
+    let sizeString = String(data: sizeData, encoding: .ascii)!
+    return strtoull(sizeString, nil, 8) // Size is an octal number, convert to decimal
   }
 
   private func writeFileData(object: Any, location _loc: UInt64, length _len: UInt64,
