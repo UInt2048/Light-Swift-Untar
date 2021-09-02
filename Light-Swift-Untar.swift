@@ -97,11 +97,15 @@ public extension FileManager {
         let maxSize = FileManager.tarMaxBlockLoadInMemory * FileManager.tarBlockSize
         var length = _len, location = _loc
         while length > maxSize {
-          destinationFile.write(fileHandle.readData(ofLength: Int(maxSize)))
+          autoreleasepool { // Needed to prevent heap overflow when reading large files
+            destinationFile.write(fileHandle.readData(ofLength: Int(maxSize)))
+          }
           location += maxSize
           length -= maxSize
         }
-        destinationFile.write(fileHandle.readData(ofLength: Int(length)))
+        autoreleasepool { // Needed to prevent heap overflow when reading large files
+          destinationFile.write(fileHandle.readData(ofLength: Int(length)))
+        }
         destinationFile.closeFile()
       }
     }
@@ -112,7 +116,9 @@ public extension FileManager {
       return data.subdata(in: Int(location) ..< Int(location + length))
     } else if let fileHandle = object as? FileHandle {
       fileHandle.seek(toFileOffset: location)
-      return fileHandle.readData(ofLength: Int(length))
+      return autoreleasepool { // Needed to prevent heap overflow when reading large files
+        fileHandle.readData(ofLength: Int(length))
+      }
     }
     return nil
   }
