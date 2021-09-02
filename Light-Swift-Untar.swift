@@ -35,7 +35,7 @@ public extension FileManager {
       switch type {
       case "0": // File
         let name = self.name(object: tarObject, offset: location)
-        let filePath = path + name
+        let filePath = URL(string: path)!.appendingPathComponent(name).path
         let size = self.size(object: tarObject, offset: location)
         if size == 0 { try "".write(toFile: filePath, atomically: true, encoding: .utf8) }
         else {
@@ -45,7 +45,7 @@ public extension FileManager {
         }
       case "5": // Directory
         let name = self.name(object: tarObject, offset: location)
-        let directoryPath = path + name
+        let directoryPath = URL(string: path)!.appendingPathComponent(name).path
         try createDirectory(atPath: directoryPath, withIntermediateDirectories: true,
                             attributes: nil)
       case "\0": break // Null block
@@ -72,9 +72,15 @@ public extension FileManager {
   }
 
   private func name(object: Any, offset: UInt64) -> String {
-    let nameData = data(object: object, location: offset + FileManager.tarNamePosition,
-                        length: FileManager.tarNameSize)!
-    return String(data: nameData, encoding: .ascii)!
+    var name = ""
+    for i in 0...FileManager.tarNameSize {
+      let char = String(data: data(object: object, location: offset + FileManager.tarNamePosition + i, length: 1)!, encoding: .ascii)!
+      if (char == "\0") {
+        return name
+      }
+      name += char
+    }
+    return name
   }
 
   private func size(object: Any, offset: UInt64) -> UInt64 {
@@ -97,11 +103,15 @@ public extension FileManager {
         let maxSize = FileManager.tarMaxBlockLoadInMemory * FileManager.tarBlockSize
         var length = _len, location = _loc
         while length > maxSize {
-          destinationFile.write(fileHandle.readData(ofLength: Int(maxSize)))
+          autoreleasepool { // Needed to prevent heap overflow when reading large files
+            destinationFile.write(fileHandle.readData(ofLength: Int(maxSize)))
+          }
           location += maxSize
           length -= maxSize
         }
-        destinationFile.write(fileHandle.readData(ofLength: Int(length)))
+        autoreleasepool { // Needed to prevent heap overflow when reading large files
+          destinationFile.write(fileHandle.readData(ofLength: Int(length)))
+        }
         destinationFile.closeFile()
       }
     }
@@ -112,7 +122,9 @@ public extension FileManager {
       return data.subdata(in: Int(location) ..< Int(location + length))
     } else if let fileHandle = object as? FileHandle {
       fileHandle.seek(toFileOffset: location)
-      return fileHandle.readData(ofLength: Int(length))
+      return autoreleasepool { // Needed to prevent heap overflow when reading large files
+        fileHandle.readData(ofLength: Int(length))
+      }
     }
     return nil
   }
