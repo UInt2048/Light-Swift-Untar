@@ -72,15 +72,15 @@ public extension FileManager {
   }
 
   private func name(object: Any, offset: UInt64) -> String {
-    var name = ""
+    var nameSize = FileManager.tarNameSize
     for i in 0...FileManager.tarNameSize {
       let char = String(data: data(object: object, location: offset + FileManager.tarNamePosition + i, length: 1)!, encoding: .ascii)!
       if (char == "\0") {
-        return name
+        nameSize = i
+        break
       }
-      name += char
     }
-    return name
+    return String(data: data(object: object, location: offset + FileManager.tarNamePosition, length: nameSize)!, encoding: .utf8)!
   }
 
   private func size(object: Any, offset: UInt64) -> UInt64 {
