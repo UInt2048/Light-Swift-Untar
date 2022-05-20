@@ -35,7 +35,7 @@ public extension FileManager {
       switch type {
       case "0": // File
         let name = self.name(object: tarObject, offset: location)
-        let filePath = URL(string: path)!.appendingPathComponent(name).path
+        let filePath = URL(fileURLWithPath: path).appendingPathComponent(name).path
         let size = self.size(object: tarObject, offset: location)
         if size == 0 { try "".write(toFile: filePath, atomically: true, encoding: .utf8) }
         else {
@@ -45,7 +45,7 @@ public extension FileManager {
         }
       case "5": // Directory
         let name = self.name(object: tarObject, offset: location)
-        let directoryPath = URL(string: path)!.appendingPathComponent(name).path
+        let directoryPath = URL(fileURLWithPath: path).appendingPathComponent(name).path
         try createDirectory(atPath: directoryPath, withIntermediateDirectories: true,
                             attributes: nil)
       case "\0": break // Null block
